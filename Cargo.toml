@@ -1,0 +1,14 @@
+[package]
+name = "forma-tests"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+forma = { version = "0.1.0", package = "forma-render" }
+moscato = "0.1.2"
+pinot = "0.1.5"
+winit = "0.27.5"
+wgpu = "0.14.0"
+pollster = "0.2.5"
