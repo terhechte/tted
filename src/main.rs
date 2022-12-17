@@ -1,5 +1,8 @@
 mod draw;
+mod layout_types;
 mod runner;
+mod text;
+mod types;
 
 use std::{
     collections::HashSet,

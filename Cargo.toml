@@ -12,3 +12,4 @@ pinot = "0.1.5"
 winit = "0.27.5"
 wgpu = "0.14.0"
 pollster = "0.2.5"
+parley = { git = "https://github.com/dfrg/parley" }
