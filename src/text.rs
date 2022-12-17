@@ -1,11 +1,17 @@
 use std::time::Duration;
 
-use crate::layout_types::{FormaBrush, LayoutContext, Widget};
+use crate::layout_types::{CacheKey, FormaBrush, LayoutContext, Widget};
 use crate::types::Size;
 
+use emoji::lookup_by_glyph::lookup;
+use emoji::Emoji;
 use forma::prelude::*;
 use parley::style::{FontFamily, FontStack};
-use parley::Layout;
+use parley::swash::scale::image::{Content as SwashContent, Image as SwashImage};
+use parley::swash::scale::ScaleContext;
+use parley::swash::scale::{Render, Source, StrikeWith};
+use parley::swash::zeno::Format;
+use parley::{FontContext, Layout};
 use pinot::types::Tag;
 
 pub struct Text {
@@ -86,13 +92,16 @@ impl Widget for Text {
                 let run = glyph_run.run();
                 let font = run.font().as_ref();
                 let font_size = run.font_size();
-                dbg!(&font.key);
                 let font_ref = pinot::FontRef {
                     data: font.data,
                     offset: font.offset,
                 };
                 let style = glyph_run.style();
                 let vars: [(Tag, f32); 0] = [];
+
+                let range = run.text_range();
+                let slice = &self.text[range];
+                dbg!(&slice);
 
                 //let mut gp = gcx.new_provider(&font_ref, None, font_size, false, vars);
 
@@ -104,7 +113,13 @@ impl Widget for Text {
                     .build();
 
                 for glyph in glyph_run.glyphs() {
+                    // if let Some(emoji) =
+                    //     lookup(slice).and_then(|emoji| swash_image(&mut scaler, glyph.id))
+                    // {
+                    //     //
+                    // } else
                     if let Some(g) = scaler.glyph(glyph.id) {
+                        // dbg!(c, &g);
                         if let Some(path) = g.path(0) {
                             let path = c_path(path, &transform);
                             layer
@@ -132,14 +147,6 @@ impl Widget for Text {
                         }
                         x += glyph.advance;
                     }
-                    // if let Some(fragment) = gp.get(glyph.id, Some(&style.brush.0)) {
-                    //     let gx = x + glyph.x;
-                    //     let gy = y - glyph.y;
-                    //     let xform = Affine::translate((gx as f64, gy as f64))
-                    //         * Affine::scale_non_uniform(1.0, -1.0);
-                    //     builder.append(&fragment, Some(transform * xform));
-                    // }
-                    // x += glyph.advance;
                 }
             }
         }
@@ -178,3 +185,48 @@ fn c_point(value: moscato::Point, tf: &AffineTransform) -> forma::prelude::Point
         y: tf.uy.mul_add(value.y, tf.vy.mul_add(value.y, tf.ty)),
     }
 }
+
+/*
+// - render a given emoji
+// - into a cache
+// - return the cache value if available
+// - above: render the image as a texture instead of a path (or rather, a path with a texture)
+fn swash_image(, glyph_id: u16) -> Option<SwashImage> {
+    // let font = match font_system.get_font(cache_key.font_id) {
+    //     Some(some) => some,
+    //     None => {
+    //         log::warn!("did not find font {:?}", cache_key.font_id);
+    //         return None;
+    //     }
+    // };
+
+    // // Build the scaler
+    // let mut scaler = context
+    //     .builder(font.as_swash())
+    //     .size(cache_key.font_size as f32)
+    //     .hint(true)
+    //     .build();
+
+    // Compute the fractional offset-- you'll likely want to quantize this
+    // in a real renderer
+    // let offset = Vector::new(cache_key.x_bin.as_float(), cache_key.y_bin.as_float());
+
+    // Select our source order
+    Render::new(&[
+        // Color outline with the first palette
+        Source::ColorOutline(0),
+        // Color bitmap with best fit selection mode
+        Source::ColorBitmap(StrikeWith::BestFit),
+        // Standard scalable outline
+        Source::Outline,
+    ])
+    // Select a subpixel format
+    .format(Format::Alpha)
+    // Apply the fractional offset
+    // FIXME:
+    // .offset(offset)
+    // Render the image
+    .render(scaler, glyph_id)
+}
+
+*/

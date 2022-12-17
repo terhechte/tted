@@ -20,7 +20,7 @@ pub struct Drawer {
 
 impl Drawer {
     pub fn new() -> Self {
-        let text = Text::new("Hello World");
+        let text = Text::new("epepepea . 🙂  👨‍👩‍👧‍👦");
         const FONT_DATA: &[u8] = include_bytes!("ArchivoBlack-Regular.ttf");
 
         // FIXME: Move these into a separate type

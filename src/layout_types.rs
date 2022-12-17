@@ -41,3 +41,14 @@ pub struct LayoutContext<'a> {
     pub transform: &'a AffineTransform,
     pub index: u32,
 }
+
+/// Key for building a glyph cache
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct CacheKey {
+    /// Font ID
+    pub font_id: usize,
+    /// Glyph ID
+    pub glyph_id: u16,
+    /// Font size in pixels
+    pub font_size: i32,
+}
