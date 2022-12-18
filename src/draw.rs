@@ -75,7 +75,7 @@ impl crate::App for Drawer {
 
     fn update(&mut self, context: &RunContext<'_>) {
         if let Some(delta) = context.mouse.wheel {
-            self.transform = self.transform.scaled((delta.x / 100.) as f32);
+            self.transform = self.transform.scaled((delta.y / 1000.) as f32);
             self.needs_composition = true;
         }
 
