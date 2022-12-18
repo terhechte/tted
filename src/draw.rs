@@ -21,13 +21,15 @@ pub struct Drawer {
 impl Drawer {
     pub fn new() -> Self {
         //let text = Text::new("l 😀 i");
-        let text = Text::new("Emoji! 😀 👨‍👩‍👧‍👦");
+        let text = Text::new("Emoji! aslkfdj salkjf 😀 👨‍👩‍👧‍👦");
         // let text = Text::new("l e");
         // let text = Text::new("World");
+
+        let mut context = FontContext::new();
+
         const FONT_DATA: &[u8] = include_bytes!("ArchivoBlack-Regular.ttf");
 
         // FIXME: Move these into a separate type
-        let mut context = FontContext::new();
         context.register_fonts(FONT_DATA.to_owned());
 
         Self {
@@ -62,8 +64,10 @@ impl crate::App for Drawer {
             index: &mut index,
         };
 
+        let size = Size::new(200., 300.);
+
         // FIXME: We get size back here, do something with it?
-        self.widget.layout(&mut layout_context, self.size);
+        self.widget.layout(&mut layout_context, size);
         self.widget
             .compose(&mut layout_context, composition, elapsed);
 

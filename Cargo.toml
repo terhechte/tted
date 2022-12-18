@@ -7,12 +7,10 @@ edition = "2021"
 
 [dependencies]
 forma = { version = "0.1.0", features = ["gpu"], package = "forma-render" }
-moscato = "0.1.2"
 pinot = "0.1.5"
 winit = "0.27.5"
 wgpu = "0.14.0"
 pollster = "0.2.5"
 parley = { git = "https://github.com/dfrg/parley" }
-#emojito = { path = "/Users/terhechte/Development/Rust/emojito" }
 emoji = "0.2.1"
-image = "0.23"
+image = "0.24.5"

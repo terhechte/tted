@@ -26,7 +26,6 @@ impl Default for FormaBrush {
 impl Brush for FormaBrush {}
 
 pub trait Widget {
-    fn measure(&mut self) -> (Size, Size);
     fn layout<'a>(&mut self, ctx: &mut LayoutContext<'a>, proposed_size: Size) -> Size;
     fn compose<'a>(
         &mut self,
