@@ -19,19 +19,75 @@ use runner::{CpuRunner, GpuRunner};
 
 use forma::prelude::*;
 use winit::{
-    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    dpi::PhysicalPosition,
+    event::{
+        ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
+        WindowEvent,
+    },
     event_loop::{ControlFlow, EventLoop},
 };
+
+pub struct RunContext<'a> {
+    elapsed: Duration,
+    keyboard: &'a Keyboard,
+    mouse: &'a Mouse,
+}
 
 trait App {
     fn set_width(&mut self, width: usize);
     fn set_height(&mut self, height: usize);
-    fn compose(&mut self, composition: &mut Composition, elapsed: Duration, keyboard: &Keyboard);
+    fn update<'a>(&mut self, context: &RunContext<'a>);
+    fn compose<'a>(&mut self, composition: &mut Composition, context: &RunContext<'a>);
 }
 
 trait Runner {
     fn resize(&mut self, width: u32, height: u32);
-    fn render(&mut self, app: &mut dyn App, elapsed: Duration, keyboard: &Keyboard);
+    fn render<'a>(&mut self, app: &mut dyn App, context: RunContext<'a>);
+}
+
+struct Mouse {
+    pressed: HashSet<MouseButton>,
+    wheel: Option<PhysicalPosition<f64>>,
+    position: PhysicalPosition<f64>,
+    position_delta: PhysicalPosition<f64>,
+}
+
+impl Mouse {
+    fn new() -> Self {
+        Self {
+            pressed: HashSet::new(),
+            wheel: None,
+            position: PhysicalPosition::default(),
+            position_delta: PhysicalPosition::default(),
+        }
+    }
+
+    fn pressed_left(&self) -> bool {
+        self.pressed.contains(&winit::event::MouseButton::Left)
+    }
+
+    fn on_mouse_input(&mut self, button: winit::event::MouseButton, state: ElementState) {
+        match state {
+            ElementState::Pressed => self.pressed.insert(button),
+            ElementState::Released => self.pressed.remove(&button),
+        };
+    }
+
+    fn update_position(&mut self, position: PhysicalPosition<f64>) {
+        self.position_delta = PhysicalPosition {
+            x: self.position.x - position.x,
+            y: self.position.y - position.y,
+        };
+        self.position = position;
+    }
+
+    fn update_wheel(&mut self, wheel: PhysicalPosition<f64>) {
+        self.wheel = Some(wheel);
+    }
+
+    fn clear(&mut self) {
+        self.wheel = None;
+    }
 }
 
 struct Keyboard {
@@ -112,6 +168,8 @@ fn main() {
 
     let mut instant = Instant::now();
     let mut keyboard = Keyboard::new();
+    let mut mouse = Mouse::new();
+
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
 
@@ -139,6 +197,28 @@ fn main() {
             }
             Event::WindowEvent {
                 event:
+                    WindowEvent::MouseWheel {
+                        delta: MouseScrollDelta::PixelDelta(delta),
+                        ..
+                    },
+                ..
+            } => {
+                mouse.update_wheel(delta);
+            }
+            Event::WindowEvent {
+                event: WindowEvent::CursorMoved { position, .. },
+                ..
+            } => {
+                mouse.update_position(position);
+            }
+            Event::WindowEvent {
+                event: WindowEvent::MouseInput { state, button, .. },
+                ..
+            } => {
+                mouse.on_mouse_input(button, state);
+            }
+            Event::WindowEvent {
+                event:
                     WindowEvent::Resized(size)
                     | WindowEvent::ScaleFactorChanged {
                         new_inner_size: &mut size,
@@ -155,7 +235,15 @@ fn main() {
                 let elapsed = instant.elapsed();
                 instant = Instant::now();
 
-                runner.render(&mut app, elapsed, &keyboard);
+                let context = RunContext {
+                    elapsed,
+                    keyboard: &keyboard,
+                    mouse: &mouse,
+                };
+
+                runner.render(&mut app, context);
+
+                // mouse.clear();
             }
             _ => (),
         }

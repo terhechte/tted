@@ -13,7 +13,7 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-use crate::{App, Keyboard, Runner};
+use crate::{App, Keyboard, RunContext, Runner};
 
 fn statistics(durations: &mut Vec<f64>) -> (f64, f64, f64) {
     let min = durations
@@ -118,7 +118,7 @@ impl Runner for CpuRunner {
         self.surface.configure(&self.device, &self.config);
     }
 
-    fn render(&mut self, app: &mut dyn App, elapsed: Duration, keyboard: &Keyboard) {
+    fn render<'a>(&mut self, app: &mut dyn App, context: RunContext<'a>) {
         if self.compose_durations.len() == 50 {
             let (compose_avg, compose_min, compose_max) = statistics(&mut self.compose_durations);
             let (render_avg, render_min, render_max) = statistics(&mut self.render_durations);
@@ -129,8 +129,10 @@ impl Runner for CpuRunner {
             ));
         }
 
+        app.update(&context);
+
         let compose_duration = measure(|| {
-            app.compose(&mut self.composition, elapsed, keyboard);
+            app.compose(&mut self.composition, &context);
         });
 
         let render_duration = measure(|| {
@@ -175,34 +177,6 @@ impl Runner for CpuRunner {
         self.queue.submit(None);
 
         frame.present();
-
-        if keyboard.is_key_down(VirtualKeyCode::S) {
-            let mut bytes = Vec::with_capacity(self.layout.width() * self.layout.height() * 3);
-            for pixel in self.buffer.chunks(4) {
-                if let &[b, g, r, _] = pixel {
-                    bytes.push(r);
-                    bytes.push(g);
-                    bytes.push(b);
-                }
-            }
-            let new_path = "capture.ppm";
-            let mut output = File::options()
-                .write(true)
-                .create(true)
-                .open(new_path)
-                .unwrap();
-            output
-                .write_all(
-                    format!(
-                        "P6\n{} {}\n255\n",
-                        self.layout.width(),
-                        self.layout.height()
-                    )
-                    .as_bytes(),
-                )
-                .unwrap();
-            output.write_all(&bytes).unwrap();
-        }
     }
 }
 
@@ -302,7 +276,7 @@ impl Runner for GpuRunner {
         self.surface.configure(&self.device, &self.config);
     }
 
-    fn render(&mut self, app: &mut dyn App, elapsed: Duration, keyboard: &Keyboard) {
+    fn render<'a>(&mut self, app: &mut dyn App, context: RunContext<'a>) {
         if self.compose_durations.len() == 50 {
             let (compose_avg, compose_min, compose_max) = statistics(&mut self.compose_durations);
             let (rasterize_avg, rasterize_min, rasterize_max) =
@@ -320,8 +294,10 @@ impl Runner for GpuRunner {
             ));
         }
 
+        app.update(&context);
+
         let compose_duration = measure(|| {
-            app.compose(&mut self.composition, elapsed, keyboard);
+            app.compose(&mut self.composition, &context);
         });
 
         let timings = self.renderer.render(

@@ -26,16 +26,16 @@ impl Default for FormaBrush {
 impl Brush for FormaBrush {}
 
 pub trait Widget {
-    fn layout<'a>(&mut self, ctx: &mut LayoutContext<'a>, proposed_size: Size) -> Size;
+    fn layout<'a>(&mut self, ctx: &mut WidgetContext<'a>, proposed_size: Size) -> Size;
     fn compose<'a>(
         &mut self,
-        ctx: &mut LayoutContext<'a>,
+        ctx: &mut WidgetContext<'a>,
         composition: &mut Composition,
         elapsed: Duration,
     );
 }
 
-pub struct LayoutContext<'a> {
+pub struct WidgetContext<'a> {
     pub font_context: &'a mut FontContext,
     pub transform: &'a AffineTransform,
     pub index: &'a mut u32,

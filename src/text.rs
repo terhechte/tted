@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::conversion::{convert_bounds, convert_path, Convert};
 use crate::helpers::{shift_raw_transform, AffineHelpers};
-use crate::layout_types::{FormaBrush, LayoutContext, Widget};
+use crate::layout_types::{FormaBrush, Widget, WidgetContext};
 use crate::rich_text::RichText;
 use crate::types::Size;
 
@@ -30,7 +30,7 @@ impl Text {
 }
 
 impl Widget for Text {
-    fn layout<'a>(&mut self, ctx: &mut LayoutContext<'a>, proposed_size: Size) -> Size {
+    fn layout<'a>(&mut self, ctx: &mut WidgetContext<'a>, proposed_size: Size) -> Size {
         let mut layout_context = parley::LayoutContext::new();
         let mut layout = self.text.build(&mut layout_context, ctx.font_context);
         layout.break_all_lines(Some(proposed_size.w), parley::layout::Alignment::Start);
@@ -42,7 +42,7 @@ impl Widget for Text {
 
     fn compose<'a>(
         &mut self,
-        ctx: &mut LayoutContext<'a>,
+        ctx: &mut WidgetContext<'a>,
         composition: &mut Composition,
         _elapsed: Duration,
     ) {
@@ -52,19 +52,8 @@ impl Widget for Text {
         }
         self.needs_update = false;
 
-        // FIXME: Replace with the transform in ctx
-        let uniscale = 1f32;
-        let unitranslate = (50f32, 50f32);
-
         // The mirror transform for individual characters
-        let transform = AffineTransform {
-            ux: 1.0,
-            uy: -1.0,
-            vx: 0.0,
-            vy: 0.0,
-            tx: 0.0,
-            ty: 0.0,
-        };
+        let transform = AffineTransform::new_mirror(false, true);
 
         let Some(layout) = self.layout.as_ref() else { return };
 
@@ -100,18 +89,7 @@ impl Widget for Text {
                 for glyph in glyph_run.glyphs() {
                     let is_emoji = lookup(slice).is_some();
 
-                    // FIXME: Refactor into .translate, .scale, etc functions for raw affines
-                    let path_transform = &[
-                        uniscale,
-                        0.0,
-                        x * uniscale + unitranslate.0,
-                        0.0,
-                        uniscale,
-                        y * uniscale + unitranslate.1,
-                        0.0,
-                        0.0,
-                        1.0,
-                    ];
+                    let path_transform = ctx.transform.translated(x, y);
 
                     let Some(outline) = scaler.scale_outline(glyph.id) else {
                         x += glyph.advance;
@@ -129,7 +107,7 @@ impl Widget for Text {
                         let path = convert_bounds(&bounds, &transform);
 
                         let texture_transform = AffineTransform::from_raw(&shift_raw_transform(
-                            path_transform,
+                            &path_transform.raw(),
                             0.0,
                             -bounds.height(),
                         ))
@@ -137,7 +115,7 @@ impl Widget for Text {
                         .unwrap_or_default();
 
                         layer
-                            .insert(&path.transform(path_transform))
+                            .insert(&path.transform(&path_transform.raw()))
                             .set_props(Props {
                                 fill_rule: FillRule::NonZero,
                                 func: Func::Draw(Style {
@@ -151,7 +129,7 @@ impl Widget for Text {
                     } else {
                         let path = convert_path(outline.path().commands(), &transform);
                         layer
-                            .insert(&path.transform(path_transform))
+                            .insert(&path.transform(&path_transform.raw()))
                             .set_props(Props {
                                 fill_rule: FillRule::NonZero,
                                 func: Func::Draw(Style {

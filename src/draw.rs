@@ -3,13 +3,14 @@ use std::time::Duration;
 use forma::{prelude::AffineTransform, Composition};
 use parley::FontContext;
 
+use crate::helpers::AffineHelpers;
 use crate::rich_text::{RichText, StyleProperty};
-use crate::Keyboard;
 use crate::{
-    layout_types::{LayoutContext, Widget},
+    layout_types::{Widget, WidgetContext},
     text::Text,
     types::Size,
 };
+use crate::{Keyboard, RunContext};
 
 pub struct Drawer {
     widget: Text,
@@ -42,9 +43,20 @@ impl Drawer {
         // FIXME: Move these into a separate type
         context.register_fonts(FONT_DATA.to_owned());
 
+        let scale = 1.;
+        let translate = 50.;
+        let transform = AffineTransform {
+            ux: scale,
+            vx: 0.0,
+            uy: 0.0,
+            vy: scale,
+            tx: translate * scale,
+            ty: translate * scale,
+        };
+
         Self {
             widget: text,
-            transform: AffineTransform::default(),
+            transform,
             font_context: context,
             needs_composition: true,
             size: Size { w: 1000., h: 1000. },
@@ -61,14 +73,27 @@ impl crate::App for Drawer {
         self.size.h = height as f32;
     }
 
-    fn compose(&mut self, composition: &mut Composition, elapsed: Duration, _keyboard: &Keyboard) {
+    fn update(&mut self, context: &RunContext<'_>) {
+        if let Some(delta) = context.mouse.wheel {
+            self.transform = self.transform.scaled((delta.x / 100.) as f32);
+            self.needs_composition = true;
+        }
+
+        if context.mouse.pressed_left() {
+            let delta = context.mouse.position_delta;
+            self.transform = self.transform.translated(-delta.x as f32, -delta.y as f32);
+            self.needs_composition = true;
+        }
+    }
+
+    fn compose<'a>(&mut self, composition: &mut Composition, context: &RunContext<'a>) {
         if !self.needs_composition {
             return;
         }
 
         let mut index = 0;
 
-        let mut layout_context = LayoutContext {
+        let mut layout_context = WidgetContext {
             font_context: &mut self.font_context,
             transform: &self.transform,
             index: &mut index,
@@ -78,8 +103,9 @@ impl crate::App for Drawer {
 
         // FIXME: We get size back here, do something with it?
         self.widget.layout(&mut layout_context, size);
+        // FIXME: Hand run context to widget?
         self.widget
-            .compose(&mut layout_context, composition, elapsed);
+            .compose(&mut layout_context, composition, context.elapsed);
 
         self.needs_composition = false;
     }
