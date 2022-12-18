@@ -2,6 +2,7 @@ mod conversion;
 mod draw;
 mod helpers;
 mod layout_types;
+mod rich_text;
 mod runner;
 mod text;
 mod types;

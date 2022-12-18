@@ -3,6 +3,7 @@ use std::time::Duration;
 use crate::conversion::{convert_bounds, convert_path, Convert};
 use crate::helpers::{shift_raw_transform, AffineHelpers};
 use crate::layout_types::{FormaBrush, LayoutContext, Widget};
+use crate::rich_text::RichText;
 use crate::types::Size;
 
 use emoji::lookup_by_glyph::lookup;
@@ -14,14 +15,14 @@ use parley::swash::zeno::{Format, PathData};
 use parley::Layout;
 
 pub struct Text {
-    text: String,
+    text: RichText,
     layout: Option<Layout<FormaBrush>>,
     is_wrapped: bool,
     needs_update: bool,
 }
 
 impl Text {
-    pub fn new(text: impl Into<String>) -> Self {
+    pub fn new(text: RichText) -> Self {
         Self {
             text: text.into(),
             layout: None,
@@ -33,20 +34,21 @@ impl Text {
 
 impl Widget for Text {
     fn layout<'a>(&mut self, ctx: &mut LayoutContext<'a>, proposed_size: Size) -> Size {
-        let mut lcx = parley::LayoutContext::new();
-        let mut layout_builder = lcx.ranged_builder(ctx.font_context, &self.text, 1.0);
-        layout_builder.push_default(&parley::style::StyleProperty::Brush(FormaBrush::default()));
-        layout_builder.push_default(&parley::style::StyleProperty::FontSize(30.));
-        layout_builder.push_default(&parley::style::StyleProperty::FontStack(FontStack::Single(
-            FontFamily::Named("Archivo Black"),
-        )));
-        layout_builder.push(
-            &parley::style::StyleProperty::FontStack(FontStack::Single(FontFamily::Named(
-                "Helvetica",
-            ))),
-            0..3,
-        );
-        let mut layout = layout_builder.build();
+        let mut layout_context = parley::LayoutContext::new();
+        let mut layout = self.text.build(&mut layout_context, ctx.font_context);
+        // let mut layout_builder = lcx.ranged_builder(ctx.font_context, &self.text, 1.0);
+        // layout_builder.push_default(&parley::style::StyleProperty::Brush(FormaBrush::default()));
+        // layout_builder.push_default(&parley::style::StyleProperty::FontSize(30.));
+        // layout_builder.push_default(&parley::style::StyleProperty::FontStack(FontStack::Single(
+        //     FontFamily::Named("Archivo Black"),
+        // )));
+        // layout_builder.push(
+        //     &parley::style::StyleProperty::FontStack(FontStack::Single(FontFamily::Named(
+        //         "Helvetica",
+        //     ))),
+        //     0..3,
+        // );
+        // let mut layout = layout_builder.build();
         layout.break_all_lines(Some(proposed_size.w), parley::layout::Alignment::Start);
         let size = (layout.width(), layout.height()).into();
         self.layout = Some(layout);
@@ -101,7 +103,7 @@ impl Widget for Text {
                 let vars: [(parley::swash::Tag, f32); 0] = [];
 
                 let range = run.text_range();
-                let slice = &self.text[range];
+                let slice = &self.text.slice(range);
 
                 let mut scaler = context
                     .builder(font)

@@ -3,6 +3,7 @@ use std::time::Duration;
 use forma::{prelude::AffineTransform, Composition};
 use parley::FontContext;
 
+use crate::rich_text::{RichText, StyleProperty};
 use crate::Keyboard;
 use crate::{
     layout_types::{LayoutContext, Widget},
@@ -20,8 +21,16 @@ pub struct Drawer {
 
 impl Drawer {
     pub fn new() -> Self {
+        let mut r = RichText::new([
+            StyleProperty::Font("Archivo Black"),
+            StyleProperty::FontSize(30.),
+        ]);
+        r.add_str("Headline 😀");
+        r.add_newline();
+        r.add_single("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut", StyleProperty::Font("Helvetica"));
         //let text = Text::new("l 😀 i");
-        let text = Text::new("Emoji! aslkfdj salkjf 😀 👨‍👩‍👧‍👦");
+        //let text = Text::new("Emoji! aslkfdj salkjf 😀 👨‍👩‍👧‍👦");
+        let text = Text::new(r);
         // let text = Text::new("l e");
         // let text = Text::new("World");
 
