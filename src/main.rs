@@ -95,12 +95,15 @@ fn main() {
     //         wgpu::PowerPreference::HighPerformance,
     //     )),
     // };
+
     let mut runner = Box::new(GpuRunner::new(
         &event_loop,
         width as u32,
         height as u32,
         wgpu::PowerPreference::HighPerformance,
     ));
+
+    // let mut runner = Box::new(CpuRunner::new(&event_loop, width as u32, height as u32));
 
     let mut app = draw::Drawer::new();
 
