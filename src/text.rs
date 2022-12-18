@@ -8,7 +8,6 @@ use crate::types::Size;
 
 use emoji::lookup_by_glyph::lookup;
 use forma::prelude::*;
-use parley::style::{FontFamily, FontStack};
 use parley::swash::scale::{Render, Source, StrikeWith};
 use parley::swash::scale::{ScaleContext, Scaler};
 use parley::swash::zeno::{Format, PathData};
@@ -17,16 +16,14 @@ use parley::Layout;
 pub struct Text {
     text: RichText,
     layout: Option<Layout<FormaBrush>>,
-    is_wrapped: bool,
     needs_update: bool,
 }
 
 impl Text {
     pub fn new(text: RichText) -> Self {
         Self {
-            text: text.into(),
+            text,
             layout: None,
-            is_wrapped: false,
             needs_update: true,
         }
     }
@@ -36,19 +33,6 @@ impl Widget for Text {
     fn layout<'a>(&mut self, ctx: &mut LayoutContext<'a>, proposed_size: Size) -> Size {
         let mut layout_context = parley::LayoutContext::new();
         let mut layout = self.text.build(&mut layout_context, ctx.font_context);
-        // let mut layout_builder = lcx.ranged_builder(ctx.font_context, &self.text, 1.0);
-        // layout_builder.push_default(&parley::style::StyleProperty::Brush(FormaBrush::default()));
-        // layout_builder.push_default(&parley::style::StyleProperty::FontSize(30.));
-        // layout_builder.push_default(&parley::style::StyleProperty::FontStack(FontStack::Single(
-        //     FontFamily::Named("Archivo Black"),
-        // )));
-        // layout_builder.push(
-        //     &parley::style::StyleProperty::FontStack(FontStack::Single(FontFamily::Named(
-        //         "Helvetica",
-        //     ))),
-        //     0..3,
-        // );
-        // let mut layout = layout_builder.build();
         layout.break_all_lines(Some(proposed_size.w), parley::layout::Alignment::Start);
         let size = (layout.width(), layout.height()).into();
         self.layout = Some(layout);
@@ -129,16 +113,16 @@ impl Widget for Text {
                         1.0,
                     ];
 
-                    // FIXME: Check if the color_outline or has_bitmap things tell me whether
-                    // it is a emoji (so I can remove the is_emoji check)
-
                     let Some(outline) = scaler.scale_outline(glyph.id) else {
                         x += glyph.advance;
                         continue
                     };
-
                     if let Some(image) = is_emoji
-                        .then(|| render_image(&mut scaler, glyph.id))
+                        .then(|| {
+                            scaler
+                                .scale_color_bitmap(glyph.id, StrikeWith::BestFit)
+                                .and_then(|img| img.convert())
+                        })
                         .flatten()
                     {
                         let bounds = outline.bounds();
@@ -181,15 +165,4 @@ impl Widget for Text {
             }
         }
     }
-}
-
-fn render_image(scaler: &mut Scaler, glyph_id: u16) -> Option<forma::styling::Image> {
-    let image = Render::new(&[
-        Source::ColorOutline(0),
-        Source::ColorBitmap(StrikeWith::BestFit),
-        Source::Outline,
-    ])
-    .format(Format::Alpha)
-    .render(scaler, glyph_id)?;
-    image.convert()
 }

@@ -28,6 +28,7 @@ impl Drawer {
         r.add_str("Headline 😀");
         r.add_newline();
         r.add_single("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut", StyleProperty::Font("Helvetica"));
+
         //let text = Text::new("l 😀 i");
         //let text = Text::new("Emoji! aslkfdj salkjf 😀 👨‍👩‍👧‍👦");
         let text = Text::new(r);
