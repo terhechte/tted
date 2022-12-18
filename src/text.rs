@@ -140,40 +140,45 @@ impl Widget for Text {
                     println!("is emoji {is_emoji} {slice:?}");
 
                     if is_emoji {
-                        if let Some(image) = swash_image(&mut scaler, glyph.id, uniscale) {
-                            // Shadow the affine transform above, we don't want to mirror here
-                            // let transform = AffineTransform::default();
-                            let mut builder = forma::PathBuilder::default();
-                            let p = image.placement;
-                            builder.move_to(c_point3(p.left, p.top - p.height as i32, &transform));
-                            builder.line_to(c_point3(
-                                p.left + p.width as i32,
-                                p.top - p.height as i32,
-                                &transform,
-                            ));
-                            builder.line_to(c_point3(p.left + p.width as i32, p.top, &transform));
-                            builder.line_to(c_point3(p.left, p.top, &transform));
-                            let path = builder.build();
+                        if let Some(ix) =
+                            swash_image(&mut scaler, glyph.id, uniscale).and_then(c_image)
+                        {
+                            if let Some(outline) = scaler.scale_outline(glyph.id) {
+                                // Shadow the affine transform above, we don't want to mirror here
+                                // let transform = AffineTransform::default();
+                                let mut builder = forma::PathBuilder::default();
+                                let b = outline.bounds();
+                                dbg!(&b);
+                                builder.move_to(c_point3(b.min.x, b.min.y, &transform));
+                                builder.line_to(c_point3(b.min.x + b.max.x, b.min.y, &transform));
+                                builder.line_to(c_point3(
+                                    b.min.x + b.max.x,
+                                    b.min.y + b.max.y,
+                                    &transform,
+                                ));
+                                builder.line_to(c_point3(b.min.x, b.min.y + b.max.y, &transform));
+                                builder.line_to(c_point3(b.min.x, b.min.y, &transform));
+                                let path = builder.build();
 
-                            let tx = &[
-                                uniscale,
-                                0.0,
-                                x * uniscale + unitranslate.0,
-                                0.0,
-                                uniscale,
-                                y * uniscale + unitranslate.1,
-                                0.0,
-                                0.0,
-                                1.0,
-                            ];
+                                let tx = &[
+                                    uniscale,
+                                    0.0,
+                                    x * uniscale + unitranslate.0,
+                                    0.0,
+                                    uniscale,
+                                    y * uniscale + unitranslate.1,
+                                    0.0,
+                                    0.0,
+                                    1.0,
+                                ];
 
-                            if let Some(ix) = c_image(image) {
-                                let outline = scaler.scale_outline(glyph.id);
+                                // if let Some(ix) = c_image(image) {
+                                // let outline = scaler.scale_outline(glyph.id);
 
-                                if let Some(g) = outline {
-                                    dbg!(g.bounds());
-                                    dbg!(glyph.x, glyph.y);
-                                }
+                                // if let Some(g) = outline {
+                                //     dbg!(g.bounds());
+                                //     dbg!(glyph.x, glyph.y);
+                                // }
                                 // println!("a {}", 1.0 / uniscale);
                                 // println!("b {}", ix.width());
                                 // println!("c {}", p.width);
@@ -333,9 +338,7 @@ fn c_point(value: moscato::Point, tf: &AffineTransform) -> forma::prelude::Point
     }
 }
 
-fn c_point3(x: i32, y: i32, tf: &AffineTransform) -> forma::prelude::Point {
-    let x = x as f32;
-    let y = y as f32;
+fn c_point3(x: f32, y: f32, tf: &AffineTransform) -> forma::prelude::Point {
     Point {
         x: tf.ux.mul_add(x, tf.vx.mul_add(x, tf.tx)),
         y: tf.uy.mul_add(y, tf.vy.mul_add(y, tf.ty)),
