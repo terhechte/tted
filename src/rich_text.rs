@@ -6,6 +6,7 @@ use std::ops::Range;
 
 /// Simplification over `parley::style::StyleProperty` to
 /// build Rich Text in a simpler manner. Less performant.
+#[derive(Debug)]
 pub struct RichText {
     defaults: Vec<StyleProperty>,
     stack: Vec<(Range<usize>, StyleProperty)>,
@@ -19,6 +20,14 @@ impl RichText {
             stack: Vec::with_capacity(64),
             text: String::new(),
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.text.len()
+    }
+
+    pub fn attribute_count(&self) -> usize {
+        self.stack.len()
     }
 
     pub fn slice(&self, range: Range<usize>) -> &str {
