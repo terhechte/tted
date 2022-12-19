@@ -109,7 +109,7 @@ impl Widget for Text {
                         let texture_transform = AffineTransform::from_raw(&shift_raw_transform(
                             &path_transform.raw(),
                             0.0,
-                            -bounds.height(),
+                            -bounds.height() * ctx.transform.vy,
                         ))
                         .inverse()
                         .unwrap_or_default();
