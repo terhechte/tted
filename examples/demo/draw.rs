@@ -4,10 +4,10 @@ use forma::{prelude::AffineTransform, Composition};
 use forma::{Order, PathBuilder};
 use parley::FontContext;
 
-use crate::helpers::AffineHelpers;
-use crate::rich_text::{RichText, StyleProperty};
 use crate::RunContext;
-use crate::{
+use tted::helpers::AffineHelpers;
+use tted::rich_text::{RichText, StyleProperty};
+use tted::{
     layout_types::{Widget, WidgetContext},
     text::Text,
     types::Size,
@@ -29,24 +29,27 @@ impl Drawer {
             StyleProperty::Font("Archivo Black"),
             StyleProperty::FontSize(30.),
         ]);
-        r.add_str("Headline 😀 💓 👨‍👩‍👦");
-        r.add_newline();
-        r.add_single("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut", StyleProperty::Font("Helvetica"));
+        r.add_str("Forma tted 😀 💓 👨‍👩‍👦");
         for _ in 0..5 {
             r.add_newline();
-            r.add_single(include_str!("../LICENSE"), StyleProperty::Font("Helvetica"));
+            r.add_single(
+                include_str!("../../LICENSE"),
+                StyleProperty::Font("Roboto Regular"),
+            );
         }
-
-        // r.add_str(include_str!("../emoji.txt"));
 
         let text = Text::new(r);
 
         let mut context = FontContext::new();
 
-        const FONT_DATA: &[u8] = include_bytes!("ArchivoBlack-Regular.ttf");
-
-        // FIXME: Move these into a separate type
-        context.register_fonts(FONT_DATA.to_owned());
+        {
+            const FONT_DATA: &[u8] = include_bytes!("../../assets/ArchivoBlack-Regular.ttf");
+            context.register_fonts(FONT_DATA.to_owned());
+        }
+        {
+            const FONT_DATA: &[u8] = include_bytes!("../../assets/Roboto-Regular.ttf");
+            context.register_fonts(FONT_DATA.to_owned());
+        }
 
         let scale = 1.;
         let translate = 50.;

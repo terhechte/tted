@@ -22,10 +22,6 @@ impl RichText {
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.text.len()
-    }
-
     pub fn attribute_count(&self) -> usize {
         self.stack.len()
     }

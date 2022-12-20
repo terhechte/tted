@@ -1,7 +1,15 @@
 [package]
-name = "forma-tests"
+name = "tted"
 version = "0.1.0"
 edition = "2021"
+description = "Render formatted text and emoji using Forma"
+authors = ["Benedikt Terhechte"]
+license = "MIT"
+readme = "README.md"
+keywords = ["2d", "rendering", "text", "vector-graphics", "richtext", "emoji"]
+categories = ["rendering", "gui"]
+repository = "https://github.com/terhechte/tted"
+exclude = ["media", "assets", ".vscode"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

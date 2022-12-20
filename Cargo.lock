@@ -606,20 +606,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "forma-tests"
-version = "0.1.0"
-dependencies = [
- "emoji",
- "forma-render",
- "image",
- "parley",
- "pinot",
- "pollster",
- "wgpu",
- "winit",
-]
-
-[[package]]
 name = "fount"
 version = "0.1.0"
 source = "git+https://github.com/dfrg/fount#0f001e343b94353326b89628fc8b8bc4fdc4849a"
@@ -1864,6 +1850,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1333c76748e868a4d9d1017b5ab53171dfd095f70c712fdb4653a406547f598f"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "tted"
+version = "0.1.0"
+dependencies = [
+ "emoji",
+ "forma-render",
+ "image",
+ "parley",
+ "pinot",
+ "pollster",
+ "wgpu",
+ "winit",
 ]
 
 [[package]]
