@@ -14,6 +14,12 @@ This is a proof of concept of rendering rich text on the GPU using Forma, includ
 
 ## Media
 
+
+
+https://user-images.githubusercontent.com/132234/208634357-70b275d6-736a-4714-82de-661e20205b03.mov
+
+
+
 ## Try it out
 
 ``` toml
