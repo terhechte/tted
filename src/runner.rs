@@ -1,42 +1,13 @@
-use std::{
-    fs::File,
-    io::Write,
-    num::NonZeroU32,
-    time::{Duration, Instant},
-};
+use std::num::NonZeroU32;
 
 use forma::{cpu, gpu, prelude::*};
 use winit::{
     dpi::PhysicalSize,
-    event::VirtualKeyCode,
     event_loop::EventLoop,
     window::{Window, WindowBuilder},
 };
 
-use crate::{App, Keyboard, RunContext, Runner};
-
-fn statistics(durations: &mut Vec<f64>) -> (f64, f64, f64) {
-    let min = durations
-        .iter()
-        .min_by(|a, b| a.partial_cmp(b).unwrap())
-        .copied()
-        .unwrap();
-    let max = durations
-        .iter()
-        .max_by(|a, b| a.partial_cmp(b).unwrap())
-        .copied()
-        .unwrap();
-    let count = durations.len() as f64;
-    (durations.drain(..).sum::<f64>() / count, min, max)
-}
-
-fn measure<F: FnOnce()>(f: F) -> Duration {
-    let start = Instant::now();
-
-    f();
-
-    start.elapsed()
-}
+use crate::{App, RunContext, Runner};
 
 #[derive(Debug)]
 pub struct CpuRunner {
@@ -50,8 +21,6 @@ pub struct CpuRunner {
     queue: wgpu::Queue,
     surface: wgpu::Surface,
     config: wgpu::SurfaceConfiguration,
-    compose_durations: Vec<f64>,
-    render_durations: Vec<f64>,
 }
 
 impl CpuRunner {
@@ -61,7 +30,7 @@ impl CpuRunner {
         let layer_cache = renderer.create_buffer_layer_cache().unwrap();
 
         let window = WindowBuilder::new()
-            .with_title("demo | compose: ???ms, render: ???ms")
+            .with_title("test")
             .with_inner_size(PhysicalSize::new(width, height))
             .build(event_loop)
             .unwrap();
@@ -102,8 +71,6 @@ impl CpuRunner {
             queue,
             surface,
             config,
-            compose_durations: Vec::new(),
-            render_durations: Vec::new(),
         }
     }
 }
@@ -119,43 +86,24 @@ impl Runner for CpuRunner {
     }
 
     fn render<'a>(&mut self, app: &mut dyn App, context: RunContext<'a>) {
-        if self.compose_durations.len() == 50 {
-            let (compose_avg, compose_min, compose_max) = statistics(&mut self.compose_durations);
-            let (render_avg, render_min, render_max) = statistics(&mut self.render_durations);
-
-            self.window.set_title(&format!(
-                "demo | compose: {:.2}ms ({:.2}/{:.2}), render: {:.2}ms ({:.2}/{:.2})",
-                compose_avg, compose_min, compose_max, render_avg, render_min, render_max,
-            ));
-        }
-
         app.update(&context);
 
-        let compose_duration = measure(|| {
-            app.compose(&mut self.composition, &context);
-        });
+        app.compose(&mut self.composition, &context);
 
-        let render_duration = measure(|| {
-            self.renderer.render(
-                &mut self.composition,
-                &mut BufferBuilder::new(&mut self.buffer, &mut self.layout)
-                    .layer_cache(self.layer_cache.clone())
-                    .build(),
-                BGR1,
-                Color {
-                    r: 1.0,
-                    g: 1.0,
-                    b: 1.0,
-                    a: 0.0,
-                },
-                None,
-            );
-        });
-
-        self.compose_durations
-            .push(compose_duration.as_secs_f64() * 1000.0);
-        self.render_durations
-            .push(render_duration.as_secs_f64() * 1000.0);
+        self.renderer.render(
+            &mut self.composition,
+            &mut BufferBuilder::new(&mut self.buffer, &mut self.layout)
+                .layer_cache(self.layer_cache.clone())
+                .build(),
+            BGR1,
+            Color {
+                r: 1.0,
+                g: 1.0,
+                b: 1.0,
+                a: 0.0,
+            },
+            None,
+        );
 
         let frame = self.surface.get_current_texture().unwrap();
 
@@ -188,11 +136,6 @@ pub struct GpuRunner {
     queue: wgpu::Queue,
     surface: wgpu::Surface,
     config: wgpu::SurfaceConfiguration,
-    compose_durations: Vec<f64>,
-    rasterize_durations: Vec<f64>,
-    sort_durations: Vec<f64>,
-    paint_durations: Vec<f64>,
-    render_durations: Vec<f64>,
 }
 
 impl GpuRunner {
@@ -205,9 +148,7 @@ impl GpuRunner {
         let composition = Composition::new();
 
         let window = WindowBuilder::new()
-            .with_title(
-                "demo | compose: ???ms, rasterize: ???ms, sort: ???ms, paint: ???ms, render: ???ms",
-            )
+            .with_title("test")
             .with_inner_size(PhysicalSize::new(width, height))
             .build(event_loop)
             .unwrap();
@@ -260,11 +201,6 @@ impl GpuRunner {
             queue,
             surface,
             config,
-            compose_durations: Vec::new(),
-            rasterize_durations: Vec::new(),
-            sort_durations: Vec::new(),
-            paint_durations: Vec::new(),
-            render_durations: Vec::new(),
         }
     }
 }
@@ -277,30 +213,13 @@ impl Runner for GpuRunner {
     }
 
     fn render<'a>(&mut self, app: &mut dyn App, context: RunContext<'a>) {
-        if self.compose_durations.len() == 50 {
-            let (compose_avg, compose_min, compose_max) = statistics(&mut self.compose_durations);
-            let (rasterize_avg, rasterize_min, rasterize_max) =
-                statistics(&mut self.rasterize_durations);
-            let (sort_avg, sort_min, sort_max) = statistics(&mut self.sort_durations);
-            let (paint_avg, paint_min, paint_max) = statistics(&mut self.paint_durations);
-            let (render_avg, render_min, render_max) = statistics(&mut self.render_durations);
-
-            self.window.set_title(&format!(
-                "demo | compose: {:.2}ms ({:.2}/{:.2}), rasterize: {:.2}ms ({:.2}/{:.2}), \
-                sort: {:.2}ms ({:.2}/{:.2}), paint: {:.2}ms ({:.2}/{:.2}), render: {:.2}ms ({:.2}/{:.2})",
-                compose_avg, compose_min, compose_max, rasterize_avg, rasterize_min, rasterize_max,
-                sort_avg, sort_min, sort_max, paint_avg, paint_min, paint_max, render_avg,
-                render_min, render_max,
-            ));
-        }
-
         app.update(&context);
 
-        let compose_duration = measure(|| {
-            app.compose(&mut self.composition, &context);
-        });
+        // let compose_duration = measure(|| {
+        app.compose(&mut self.composition, &context);
+        // });
 
-        let timings = self.renderer.render(
+        self.renderer.render(
             &mut self.composition,
             &self.device,
             &self.queue,
@@ -314,18 +233,5 @@ impl Runner for GpuRunner {
                 a: 0.0,
             },
         );
-
-        if let Some(timings) = timings {
-            self.compose_durations
-                .push(compose_duration.as_secs_f64() * 1000.0);
-            self.rasterize_durations
-                .push(timings.rasterize.as_secs_f64() * 1000.0);
-            self.sort_durations
-                .push(timings.sort.as_secs_f64() * 1000.0);
-            self.paint_durations
-                .push(timings.paint.as_secs_f64() * 1000.0);
-            self.render_durations
-                .push(timings.render.as_secs_f64() * 1000.0);
-        }
     }
 }

@@ -29,7 +29,7 @@ pub trait Widget {
     fn layout<'a>(&mut self, ctx: &mut WidgetContext<'a>, proposed_size: Size) -> Size;
     fn compose<'a>(
         &mut self,
-        ctx: &mut WidgetContext<'a>,
+        ctx: &WidgetContext<'a>,
         composition: &mut Composition,
         elapsed: Duration,
     );
@@ -39,6 +39,7 @@ pub struct WidgetContext<'a> {
     pub font_context: &'a mut FontContext,
     pub transform: &'a AffineTransform,
     pub index: &'a mut u32,
+    pub clip: bool,
 }
 
 /// Key for building a glyph cache

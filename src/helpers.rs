@@ -5,6 +5,7 @@ pub trait AffineHelpers: Sized {
     fn inverse(self) -> Option<Self>;
     fn transform_point(self, point: Point) -> Point;
     fn new_mirror(x: bool, y: bool) -> Self;
+    fn translat(x: f32, y: f32) -> Self;
     fn translated(&self, x: f32, y: f32) -> Self;
     fn scaled(&self, value: f32) -> Self;
     fn raw(&self) -> [f32; 9];
@@ -66,6 +67,17 @@ impl AffineHelpers for AffineTransform {
             vy: 0.0,
             tx: 0.0,
             ty: 0.0,
+        }
+    }
+
+    fn translat(x: f32, y: f32) -> Self {
+        AffineTransform {
+            ux: 1.0,
+            uy: 0.0,
+            vx: 0.0,
+            vy: 1.0,
+            tx: x,
+            ty: y,
         }
     }
 

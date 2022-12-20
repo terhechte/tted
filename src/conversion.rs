@@ -2,8 +2,8 @@ use forma::math::{AffineTransform, Point};
 use forma::styling::Image;
 use forma::Path;
 use parley::swash::scale::image::{Content, Image as SwashImage};
+use parley::swash::zeno::Vector;
 use parley::swash::zeno::{Bounds, Command};
-use parley::swash::zeno::{PathData, Vector};
 
 use crate::helpers::AffineHelpers;
 

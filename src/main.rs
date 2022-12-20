@@ -9,9 +9,6 @@ mod types;
 
 use std::{
     collections::HashSet,
-    fmt,
-    path::PathBuf,
-    str::FromStr,
     time::{Duration, Instant},
 };
 
@@ -115,54 +112,27 @@ impl Keyboard {
     }
 }
 
-pub fn to_linear(rgb: [u8; 3]) -> Color {
-    fn conv(l: u8) -> f32 {
-        let l = f32::from(l) * 255.0f32.recip();
-
-        if l <= 0.04045 {
-            l * 12.92f32.recip()
-        } else {
-            ((l + 0.055) * 1.055f32.recip()).powf(2.4)
-        }
-    }
-
-    Color {
-        r: conv(rgb[0]),
-        g: conv(rgb[1]),
-        b: conv(rgb[2]),
-        a: 1.0,
-    }
-}
-
 fn main() {
     let width = 1024.;
     let height = 768.;
 
     let event_loop = EventLoop::new();
-    // let mut runner: Box<dyn Runner> = match opts.device {
-    //     Device::Cpu => Box::new(CpuRunner::new(&event_loop, width as u32, height as u32)),
-    //     Device::GpuLowPower => Box::new(GpuRunner::new(
-    //         &event_loop,
-    //         width as u32,
-    //         height as u32,
-    //         wgpu::PowerPreference::LowPower,
-    //     )),
-    //     Device::GpuHighPerformance => Box::new(GpuRunner::new(
-    //         &event_loop,
-    //         width as u32,
-    //         height as u32,
-    //         wgpu::PowerPreference::HighPerformance,
-    //     )),
-    // };
-
-    let mut runner = Box::new(GpuRunner::new(
-        &event_loop,
-        width as u32,
-        height as u32,
-        wgpu::PowerPreference::HighPerformance,
-    ));
-
-    // let mut runner = Box::new(CpuRunner::new(&event_loop, width as u32, height as u32));
+    let device = 0; // 0 CPU, 1 Low GPU, 2: High GPU
+    let mut runner: Box<dyn Runner> = match device {
+        0 => Box::new(CpuRunner::new(&event_loop, width as u32, height as u32)),
+        1 => Box::new(GpuRunner::new(
+            &event_loop,
+            width as u32,
+            height as u32,
+            wgpu::PowerPreference::LowPower,
+        )),
+        _ => Box::new(GpuRunner::new(
+            &event_loop,
+            width as u32,
+            height as u32,
+            wgpu::PowerPreference::HighPerformance,
+        )),
+    };
 
     let mut app = draw::Drawer::new();
 
@@ -243,7 +213,7 @@ fn main() {
 
                 runner.render(&mut app, context);
 
-                // mouse.clear();
+                mouse.clear();
             }
             _ => (),
         }

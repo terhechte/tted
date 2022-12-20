@@ -2,16 +2,15 @@ use std::time::Duration;
 
 use crate::conversion::{convert_bounds, convert_path, Convert};
 use crate::helpers::{shift_raw_transform, AffineHelpers};
-use crate::layout_types::{FormaBrush, Widget, WidgetContext};
+use crate::layout_types::{Widget, WidgetContext};
 use crate::rich_text::RichText;
 use crate::types::Size;
 
 use emoji::lookup_by_glyph::lookup;
 use forma::prelude::*;
-use parley::swash::scale::{Render, Source, StrikeWith};
-use parley::swash::scale::{ScaleContext, Scaler};
-use parley::swash::zeno::{Format, PathData};
-use parley::Layout;
+use parley::swash::scale::ScaleContext;
+use parley::swash::scale::StrikeWith;
+use parley::swash::zeno::PathData;
 
 #[derive(Default)]
 struct GlyphRunCache {
@@ -135,6 +134,7 @@ impl Widget for Text {
                         glyph_cache.glyphs.push(GlyphCache::Text {
                             path,
                             style: Style {
+                                is_clipped: ctx.clip,
                                 fill: style.brush.fill.clone(),
                                 ..Default::default()
                             },
@@ -156,7 +156,7 @@ impl Widget for Text {
 
     fn compose<'a>(
         &mut self,
-        ctx: &mut WidgetContext<'a>,
+        ctx: &WidgetContext<'a>,
         composition: &mut Composition,
         _elapsed: Duration,
     ) {
@@ -193,6 +193,7 @@ impl Widget for Text {
                         layer.insert(&path).set_props(Props {
                             fill_rule: FillRule::NonZero,
                             func: Func::Draw(Style {
+                                is_clipped: ctx.clip,
                                 fill: Fill::Texture(forma::styling::Texture {
                                     transform: texture_transform,
                                     image: image.clone(),
